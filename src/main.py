@@ -8,7 +8,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.services.pass_generator import PassGenerator
-from src.config import OUTPUT_DIR
+from src import config
 
 
 def setup_logging():
@@ -34,7 +34,7 @@ def main():
     
     try:
         # Create output directory if it doesn't exist
-        OUTPUT_DIR.mkdir(exist_ok=True)
+        config.OUTPUT_DIR.mkdir(exist_ok=True)
         
         # Initialize pass generator
         generator = PassGenerator()

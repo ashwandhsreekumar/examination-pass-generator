@@ -6,7 +6,7 @@ from typing import Dict, List
 from .data_loader import DataLoader
 from .pdf_generator import PDFGenerator
 from ..utils.file_manager import get_output_path, cleanup_empty_folders
-from ..config import OUTPUT_DIR
+from .. import config
 
 logger = logging.getLogger(__name__)
 
@@ -95,7 +95,7 @@ class PassGenerator:
                 exam_name = grade_exams[0].exam_name if grade_exams else "Term I"
                 
                 # Generate PDF for this grade using original grade name from input
-                output_path = get_output_path(school_name, grade, exam_name, OUTPUT_DIR)
+                output_path = get_output_path(school_name, grade, exam_name, config.OUTPUT_DIR)
                 
                 logger.info(f"Generating passes for {school_name} - {grade} ({len(grade_students)} students)")
                 
@@ -136,7 +136,7 @@ class PassGenerator:
                     self.grade_section_stats[school_name][grade]['total_by_section'][section] += 1
         
         # Clean up empty folders
-        cleanup_empty_folders(OUTPUT_DIR)
+        cleanup_empty_folders(config.OUTPUT_DIR)
         
         # Summary
         total_files = sum(len(files) for files in generated_files.values())

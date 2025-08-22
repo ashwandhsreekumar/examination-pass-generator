@@ -13,6 +13,7 @@ import logging
 from datetime import datetime
 
 from src.services.pass_generator import PassGenerator
+from src.utils.file_manager import get_display_grade_for_school
 import src.config as config
 
 logging.basicConfig(level=logging.INFO)
@@ -174,6 +175,18 @@ def main():
                     generator = PassGenerator()
                     generated_files = generator.generate_all_passes()
                     
+                    os.chdir(original_cwd)
+                    
+                    # Find all generated PDF files - scan the output directory
+                    pdf_files = []
+                    if os.path.exists(output_dir):
+                        for root, dirs, files in os.walk(output_dir):
+                            for file in files:
+                                if file.endswith('.pdf'):
+                                    full_path = os.path.join(root, file)
+                                    pdf_files.append(full_path)
+                                    logger.info(f"Found PDF: {full_path}")
+                    
                     # Calculate statistics
                     total_students = 0
                     total_all_students = 0
@@ -193,23 +206,20 @@ def main():
                         'total_students': total_all_students,
                         'passes_generated': total_students,
                         'students_without_passes': total_all_students - total_students,
-                        'grade_breakdown': grade_breakdown
+                        'grade_breakdown': grade_breakdown,
+                        'pdf_files_generated': len(pdf_files)
                     }
                     st.session_state.generation_stats = stats
-                    
-                    os.chdir(original_cwd)
-                    
-                    pdf_files = []
-                    for root, dirs, files in os.walk(output_dir):
-                        for file in files:
-                            if file.endswith('.pdf'):
-                                pdf_files.append(os.path.join(root, file))
                     
                     st.session_state.generated_pdfs = pdf_files
                     
                     if pdf_files:
                         st.success(f"✅ Successfully generated {len(pdf_files)} PDF files!")
+                        logger.info(f"Total PDFs found: {len(pdf_files)}")
                     else:
+                        # Log what was generated vs what was found
+                        logger.warning(f"No PDFs found in {output_dir}")
+                        logger.warning(f"Generated files dict: {generated_files}")
                         st.warning("⚠️ No PDF files were generated. This may occur if there are no matching exams for the students in the uploaded files.")
                     
                 except Exception as e:
@@ -218,14 +228,16 @@ def main():
     
     with col2:
         if st.session_state.generated_pdfs and st.session_state.temp_dir:
-            zip_buffer = create_zip_file(os.path.join(st.session_state.temp_dir, "output"))
-            st.download_button(
-                label="📥 Download All Generated Passes (ZIP)",
-                data=zip_buffer,
-                file_name=f"examination_passes_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
-                mime="application/zip",
-                use_container_width=True
-            )
+            output_dir = os.path.join(st.session_state.temp_dir, "output")
+            if os.path.exists(output_dir):
+                zip_buffer = create_zip_file(output_dir)
+                st.download_button(
+                    label="📥 Download All Generated Passes (ZIP)",
+                    data=zip_buffer,
+                    file_name=f"examination_passes_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
+                    mime="application/zip",
+                    use_container_width=True
+                )
     
     with col3:
         if st.button("🗑️ Clear All", use_container_width=True):
@@ -247,7 +259,7 @@ def main():
         with col3:
             st.metric("Students Without Passes", st.session_state.generation_stats['students_without_passes'])
         with col4:
-            st.metric("PDF Files Created", len(st.session_state.generated_pdfs))
+            st.metric("PDF Files Created", st.session_state.generation_stats.get('pdf_files_generated', 0))
         
         if st.session_state.generation_stats.get('grade_breakdown'):
             st.subheader("Grade-wise Breakdown")
@@ -258,9 +270,11 @@ def main():
                     with_passes = stats.get('with_passes', {})
                     for section, total_count in total_by_section.items():
                         passes_count = with_passes.get(section, 0)
+                        # Get display grade name for Excel Global School
+                        display_grade = get_display_grade_for_school(grade, school)
                         breakdown_data.append({
                             'School': school,
-                            'Grade': grade,
+                            'Grade': display_grade,
                             'Section': section,
                             'Total Students': total_count,
                             'With Passes': passes_count,
