@@ -16,6 +16,25 @@ from src.services.pass_generator import PassGenerator
 from src.utils.file_manager import get_display_grade_for_school
 import src.config as config
 
+# Hardcoded school data
+SCHOOL_DATA = {
+    "Excel Central School": {
+        "address_line1": "17/190A, Awai Farm Lane, Thiruvattar",
+        "address_line2": "Kanyakumari District, Tamil Nadu",
+        "email": "contact@excelschools.edu.in"
+    },
+    "Excel Global School": {
+        "address_line1": "17/190B, Awai Farm Lane, Thiruvattar",
+        "address_line2": "Kanyakumari District, Tamil Nadu",
+        "email": "contact@excelschools.edu.in"
+    },
+    "Excel Pathway School": {
+        "address_line1": "17/190C, Awai Farm Lane, Thiruvattar",
+        "address_line2": "Kanyakumari District, Tamil Nadu",
+        "email": "contact@excelschools.edu.in"
+    }
+}
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -139,21 +158,7 @@ def main():
                 st.markdown(href, unsafe_allow_html=True)
         st.divider()
         
-        # School List Upload
-        school_file = st.file_uploader(
-            "School List CSV",
-            type=['csv'],
-            help="Upload school details with name, address, contact information"
-        )
-        sample_school_path = Path(__file__).parent / "samples" / "school_list.sample.csv"
-        if sample_school_path.exists():
-            with open(sample_school_path, 'rb') as f:
-                data = f.read()
-                b64 = base64.b64encode(data).decode()
-                href = f'<a href="data:text/csv;base64,{b64}" download="school_list.csv" style="text-decoration: none; color: #0068C9;">📥 Download sample file</a>'
-                st.markdown(href, unsafe_allow_html=True)
-        
-        st.info("📌 School logos and principal signatures are automatically included in the generated passes.")
+        st.info("📌 School information, logos, and principal signatures are automatically included in the generated passes.")
     
     col1, col2, col3 = st.columns([2, 2, 1])
     
@@ -162,8 +167,8 @@ def main():
             # Collapse instructions when generating
             st.session_state.instructions_expanded = False
             
-            if not all([student_file, exam_file, school_file]):
-                st.error("Please upload all required CSV files!")
+            if not all([student_file, exam_file]):
+                st.error("Please upload student list and exam list CSV files!")
                 return
             
             with st.spinner("Generating examination passes..."):
@@ -184,8 +189,14 @@ def main():
                     
                     # Save with specific names that match config expectations
                     save_uploaded_file(student_file, input_dir, "student_list.csv")
-                    save_uploaded_file(exam_file, input_dir, "exam_list.csv") 
-                    save_uploaded_file(school_file, input_dir, "school_list.csv")
+                    save_uploaded_file(exam_file, input_dir, "exam_list.csv")
+                    
+                    # Create school list CSV from hardcoded data
+                    school_csv_path = os.path.join(input_dir, "school_list.csv")
+                    with open(school_csv_path, 'w') as f:
+                        f.write("School,Address Line 1,Address Line 2,Email Address\n")
+                        for school_name, school_info in SCHOOL_DATA.items():
+                            f.write(f'"{school_name}","{school_info["address_line1"]}","{school_info["address_line2"]}",{school_info["email"]}\n')
                     
                     # Copy existing logos from the project directory
                     project_logos_dir = Path(__file__).parent / "images" / "logos"
@@ -488,11 +499,11 @@ def main():
         1. **Upload Required CSV Files:**
            - Student List: Contains student information (name, school, grade, section)
            - Exam List: Contains exam schedules and details
-           - School List: Contains school information
         
         2. **Automatic Assets:**
+           - School information (address, email) is pre-configured
            - School logos and principal signatures are automatically included
-           - No image uploads required
+           - No image or school data uploads required
         
         3. **Generate Passes:**
            - Click the "Generate Passes" button
