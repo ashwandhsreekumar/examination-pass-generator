@@ -39,7 +39,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 st.set_page_config(
-    page_title="Examination Pass Generator | Excel Group of Schools",
+    page_title="Exam Pass Generator | Excel Group of Schools",
     page_icon="🎫",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -119,6 +119,15 @@ def get_pdf_page_as_image(pdf_path, page_num=0):
 
 def main():
     initialize_session_state()
+    
+    # Custom CSS to reduce sidebar top padding
+    st.markdown("""
+        <style>
+        [data-testid="stSidebarUserContent"] {
+            padding-top: 24px !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
     
     st.title("🎓 Examination Pass Generator")
     st.markdown("Generate professional examination entry passes for Excel Schools")
