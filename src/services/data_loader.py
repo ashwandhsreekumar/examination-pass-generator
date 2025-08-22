@@ -8,7 +8,7 @@ import logging
 from ..models.student import Student
 from ..models.exam import Exam
 from ..models.school import School
-from ..config import STUDENT_LIST_FILE, EXAM_LIST_FILE, SCHOOL_LIST_FILE
+from .. import config
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ class DataLoader:
     def load_students(self) -> List[Student]:
         """Load students from CSV file."""
         try:
-            df = pd.read_csv(STUDENT_LIST_FILE, encoding='utf-8-sig')
+            df = pd.read_csv(config.STUDENT_LIST_FILE, encoding='utf-8-sig')
             students = []
             
             for _, row in df.iterrows():
@@ -61,7 +61,7 @@ class DataLoader:
     def load_exams(self) -> List[Exam]:
         """Load exams from CSV file."""
         try:
-            df = pd.read_csv(EXAM_LIST_FILE, encoding='utf-8-sig')
+            df = pd.read_csv(config.EXAM_LIST_FILE, encoding='utf-8-sig')
             exams = []
             
             for _, row in df.iterrows():
@@ -87,7 +87,7 @@ class DataLoader:
     def load_schools(self) -> Dict[str, School]:
         """Load schools from CSV file."""
         try:
-            df = pd.read_csv(SCHOOL_LIST_FILE, encoding='utf-8-sig')
+            df = pd.read_csv(config.SCHOOL_LIST_FILE, encoding='utf-8-sig')
             schools = {}
             
             for _, row in df.iterrows():

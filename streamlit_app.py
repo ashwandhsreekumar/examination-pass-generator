@@ -230,9 +230,7 @@ def main():
                     else:
                         st.warning("Default signatures not found. Passes will be generated without signatures.")
                     
-                    original_cwd = os.getcwd()
-                    os.chdir(temp_dir)
-                    
+                    # Update config paths BEFORE creating the generator
                     config.INPUT_DIR = Path(input_dir)
                     config.OUTPUT_DIR = Path(output_dir)
                     config.IMAGES_DIR = Path(images_dir)
@@ -241,6 +239,18 @@ def main():
                     config.SCHOOL_LIST_FILE = Path(input_dir) / "school_list.csv"
                     config.LOGOS_DIR = Path(logos_dir)
                     config.SIGNATURES_DIR = Path(signatures_dir)
+                    
+                    # Log the paths to debug
+                    logger.info(f"Config paths set:")
+                    logger.info(f"  STUDENT_LIST_FILE: {config.STUDENT_LIST_FILE}")
+                    logger.info(f"  EXAM_LIST_FILE: {config.EXAM_LIST_FILE}")
+                    logger.info(f"  SCHOOL_LIST_FILE: {config.SCHOOL_LIST_FILE}")
+                    logger.info(f"  File exists - student: {config.STUDENT_LIST_FILE.exists()}")
+                    logger.info(f"  File exists - exam: {config.EXAM_LIST_FILE.exists()}")
+                    logger.info(f"  File exists - school: {config.SCHOOL_LIST_FILE.exists()}")
+                    
+                    original_cwd = os.getcwd()
+                    os.chdir(temp_dir)
                     
                     generator = PassGenerator()
                     generated_files = generator.generate_all_passes()
