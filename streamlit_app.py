@@ -117,12 +117,11 @@ def main():
         if sample_student_path.exists():
             with open(sample_student_path, 'rb') as f:
                 st.download_button(
-                    label="📥 Download Sample Student List",
+                    label="📥 Download Sample",
                     data=f.read(),
                     file_name="student_list.csv",
                     mime="text/csv",
-                    key="sample_student",
-                    use_container_width=True
+                    key="sample_student"
                 )
         st.divider()
         
@@ -136,12 +135,11 @@ def main():
         if sample_exam_path.exists():
             with open(sample_exam_path, 'rb') as f:
                 st.download_button(
-                    label="📥 Download Sample Exam List",
+                    label="📥 Download Sample",
                     data=f.read(),
                     file_name="exam_list.csv",
                     mime="text/csv",
-                    key="sample_exam",
-                    use_container_width=True
+                    key="sample_exam"
                 )
         st.divider()
         
@@ -155,12 +153,11 @@ def main():
         if sample_school_path.exists():
             with open(sample_school_path, 'rb') as f:
                 st.download_button(
-                    label="📥 Download Sample School List",
+                    label="📥 Download Sample",
                     data=f.read(),
                     file_name="school_list.csv",
                     mime="text/csv",
-                    key="sample_school",
-                    use_container_width=True
+                    key="sample_school"
                 )
         
         st.info("📌 School logos and principal signatures are automatically included in the generated passes.")
