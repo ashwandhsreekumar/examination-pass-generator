@@ -34,6 +34,17 @@ def initialize_session_state():
     if 'generation_stats' not in st.session_state:
         st.session_state.generation_stats = None
 
+def create_download_link(file_path, link_text):
+    """Create a download link for a sample file."""
+    if os.path.exists(file_path):
+        with open(file_path, 'rb') as f:
+            file_contents = f.read()
+        b64 = base64.b64encode(file_contents).decode()
+        file_name = os.path.basename(file_path)
+        href = f'<a href="data:text/csv;base64,{b64}" download="{file_name}">{link_text}</a>'
+        return href
+    return None
+
 def save_uploaded_file(uploaded_file, directory, filename=None):
     if filename:
         file_path = os.path.join(directory, filename)
@@ -95,23 +106,62 @@ def main():
         st.header("📁 Upload Required Files")
         
         st.subheader("CSV Files")
+        
+        # Student List Upload
         student_file = st.file_uploader(
             "Student List CSV",
             type=['csv'],
             help="Upload student list with Display Name, School, Grade, Section, enrollment codes"
         )
+        sample_student_path = Path(__file__).parent / "input" / "student_list.csv"
+        if sample_student_path.exists():
+            with open(sample_student_path, 'rb') as f:
+                st.download_button(
+                    label="📥 Download Sample Student List",
+                    data=f.read(),
+                    file_name="sample_student_list.csv",
+                    mime="text/csv",
+                    key="sample_student",
+                    use_container_width=True
+                )
+        st.divider()
         
+        # Exam List Upload
         exam_file = st.file_uploader(
             "Exam List CSV",
             type=['csv'],
             help="Upload exam schedule with Grade, Subject, Exam Date, Day, Timing, School, Exam Name"
         )
+        sample_exam_path = Path(__file__).parent / "input" / "exam_list.csv"
+        if sample_exam_path.exists():
+            with open(sample_exam_path, 'rb') as f:
+                st.download_button(
+                    label="📥 Download Sample Exam List",
+                    data=f.read(),
+                    file_name="sample_exam_list.csv",
+                    mime="text/csv",
+                    key="sample_exam",
+                    use_container_width=True
+                )
+        st.divider()
         
+        # School List Upload
         school_file = st.file_uploader(
             "School List CSV",
             type=['csv'],
             help="Upload school details with name, address, contact information"
         )
+        sample_school_path = Path(__file__).parent / "input" / "school_list.csv"
+        if sample_school_path.exists():
+            with open(sample_school_path, 'rb') as f:
+                st.download_button(
+                    label="📥 Download Sample School List",
+                    data=f.read(),
+                    file_name="sample_school_list.csv",
+                    mime="text/csv",
+                    key="sample_school",
+                    use_container_width=True
+                )
         
         st.info("📌 School logos and principal signatures are automatically included in the generated passes.")
     
