@@ -306,6 +306,8 @@ def main():
         
         if st.session_state.generation_stats.get('grade_breakdown'):
             st.subheader("Grade-wise Breakdown")
+            
+            # Prepare data
             breakdown_data = []
             for school, grades in st.session_state.generation_stats['grade_breakdown'].items():
                 for grade, stats in grades.items():
@@ -321,12 +323,127 @@ def main():
                             'Section': section,
                             'Total Students': total_count,
                             'With Passes': passes_count,
-                            'Without Passes': total_count - passes_count
+                            'Without Passes': total_count - passes_count,
+                            'Pass Rate': f"{(passes_count/total_count*100):.1f}%" if total_count > 0 else "0%"
                         })
             
             if breakdown_data:
                 grade_df = pd.DataFrame(breakdown_data)
-                st.dataframe(grade_df, use_container_width=True)
+                
+                # Add filter controls
+                st.markdown("**🔍 Filter Options**")
+                filter_col1, filter_col2, filter_col3, filter_col4 = st.columns([2, 2, 2, 2])
+                
+                with filter_col1:
+                    schools = ['All'] + sorted(grade_df['School'].unique().tolist())
+                    selected_school = st.selectbox(
+                        "School",
+                        schools,
+                        key="filter_school"
+                    )
+                
+                with filter_col2:
+                    if selected_school != 'All':
+                        filtered_grades = grade_df[grade_df['School'] == selected_school]['Grade'].unique()
+                    else:
+                        filtered_grades = grade_df['Grade'].unique()
+                    grades = ['All'] + sorted(filtered_grades.tolist())
+                    selected_grade = st.selectbox(
+                        "Grade",
+                        grades,
+                        key="filter_grade"
+                    )
+                
+                with filter_col3:
+                    if selected_school != 'All' and selected_grade != 'All':
+                        filtered_sections = grade_df[
+                            (grade_df['School'] == selected_school) & 
+                            (grade_df['Grade'] == selected_grade)
+                        ]['Section'].unique()
+                    elif selected_school != 'All':
+                        filtered_sections = grade_df[grade_df['School'] == selected_school]['Section'].unique()
+                    elif selected_grade != 'All':
+                        filtered_sections = grade_df[grade_df['Grade'] == selected_grade]['Section'].unique()
+                    else:
+                        filtered_sections = grade_df['Section'].unique()
+                    sections = ['All'] + sorted(filtered_sections.tolist())
+                    selected_section = st.selectbox(
+                        "Section",
+                        sections,
+                        key="filter_section"
+                    )
+                
+                with filter_col4:
+                    pass_status = st.selectbox(
+                        "Pass Status",
+                        ['All', 'With Passes', 'Without Passes', 'Partial'],
+                        key="filter_status"
+                    )
+                
+                # Apply filters
+                filtered_df = grade_df.copy()
+                
+                if selected_school != 'All':
+                    filtered_df = filtered_df[filtered_df['School'] == selected_school]
+                
+                if selected_grade != 'All':
+                    filtered_df = filtered_df[filtered_df['Grade'] == selected_grade]
+                
+                if selected_section != 'All':
+                    filtered_df = filtered_df[filtered_df['Section'] == selected_section]
+                
+                if pass_status == 'With Passes':
+                    filtered_df = filtered_df[filtered_df['With Passes'] == filtered_df['Total Students']]
+                elif pass_status == 'Without Passes':
+                    filtered_df = filtered_df[filtered_df['With Passes'] == 0]
+                elif pass_status == 'Partial':
+                    filtered_df = filtered_df[
+                        (filtered_df['With Passes'] > 0) & 
+                        (filtered_df['With Passes'] < filtered_df['Total Students'])
+                    ]
+                
+                # Display filtered results
+                st.markdown(f"**Showing {len(filtered_df)} of {len(grade_df)} records**")
+                
+                # Add summary metrics for filtered data
+                if len(filtered_df) > 0:
+                    metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
+                    with metric_col1:
+                        st.metric("Filtered Total", filtered_df['Total Students'].sum())
+                    with metric_col2:
+                        st.metric("Filtered Passes", filtered_df['With Passes'].sum())
+                    with metric_col3:
+                        st.metric("Filtered Without", filtered_df['Without Passes'].sum())
+                    with metric_col4:
+                        total = filtered_df['Total Students'].sum()
+                        passes = filtered_df['With Passes'].sum()
+                        rate = (passes/total*100) if total > 0 else 0
+                        st.metric("Pass Rate", f"{rate:.1f}%")
+                
+                # Display the filtered dataframe
+                st.dataframe(
+                    filtered_df,
+                    use_container_width=True,
+                    hide_index=True,
+                    column_config={
+                        "Total Students": st.column_config.NumberColumn(
+                            "Total Students",
+                            format="%d"
+                        ),
+                        "With Passes": st.column_config.NumberColumn(
+                            "With Passes",
+                            format="%d"
+                        ),
+                        "Without Passes": st.column_config.NumberColumn(
+                            "Without Passes",
+                            format="%d"
+                        ),
+                        "Pass Rate": st.column_config.TextColumn(
+                            "Pass Rate",
+                            help="Percentage of students with passes"
+                        )
+                    }
+                )
     
     if st.session_state.generated_pdfs:
         st.header("📄 Generated PDF Files")
