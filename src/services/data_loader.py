@@ -145,25 +145,31 @@ class DataLoader:
     def _map_student_grade_to_exam_grade(self, student_grade: str) -> str:
         """Map student grade format to exam grade format.
         
-        Maps:
-        - Grade 10 -> IGCSE
-        - Grade 11 -> AS LEVEL
-        - Grade 12 -> A LEVEL
+        Since both student and exam files use the same format (Grade XX),
+        no mapping is needed. Just return the original grade.
         
-        Returns the original grade if no mapping is found.
+        Returns the original grade.
         """
-        grade_mapping = {
-            "Grade 10": "IGCSE",
-            "Grade 11": "AS LEVEL", 
-            "Grade 12": "A LEVEL"
-        }
-        
-        return grade_mapping.get(student_grade, student_grade)
+        return student_grade
     
-    def get_display_grade_name(self, student_grade: str) -> str:
+    def get_display_grade_name(self, student_grade: str, school_name: str = None) -> str:
         """Get the grade name to display in PDFs and filenames.
         
-        For mapped grades (Grade 10/11/12), returns the exam grade name (IGCSE/AS LEVEL/A LEVEL).
-        For other grades, returns the original student grade.
+        For Excel Global School:
+        - Grade 9 -> IGCSE Jr
+        - Grade 10 -> IGCSE
+        - Grade 11 -> AS Level
+        - Grade 12 -> A Level
+        
+        For other schools, returns the original student grade.
         """
-        return self._map_student_grade_to_exam_grade(student_grade)
+        if school_name == "Excel Global School":
+            grade_mapping = {
+                "Grade 09": "IGCSE Jr",
+                "Grade 10": "IGCSE",
+                "Grade 11": "AS Level",
+                "Grade 12": "A Level"
+            }
+            return grade_mapping.get(student_grade, student_grade)
+        
+        return student_grade

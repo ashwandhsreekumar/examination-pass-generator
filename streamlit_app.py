@@ -1,0 +1,351 @@
+import streamlit as st
+import pandas as pd
+import os
+import shutil
+import zipfile
+import tempfile
+from pathlib import Path
+import base64
+from io import BytesIO
+import PyPDF2
+from PIL import Image
+import logging
+from datetime import datetime
+
+from src.services.pass_generator import PassGenerator
+import src.config as config
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+st.set_page_config(
+    page_title="Examination Pass Generator",
+    page_icon="📄",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+def initialize_session_state():
+    if 'generated_pdfs' not in st.session_state:
+        st.session_state.generated_pdfs = []
+    if 'temp_dir' not in st.session_state:
+        st.session_state.temp_dir = None
+    if 'generation_stats' not in st.session_state:
+        st.session_state.generation_stats = None
+
+def save_uploaded_file(uploaded_file, directory, filename=None):
+    if filename:
+        file_path = os.path.join(directory, filename)
+    else:
+        file_path = os.path.join(directory, uploaded_file.name)
+    with open(file_path, "wb") as f:
+        f.write(uploaded_file.getbuffer())
+    return file_path
+
+def save_uploaded_image(uploaded_file, directory, filename):
+    file_path = os.path.join(directory, filename)
+    with open(file_path, "wb") as f:
+        f.write(uploaded_file.getbuffer())
+    return file_path
+
+def create_zip_file(source_dir):
+    zip_buffer = BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        for root, dirs, files in os.walk(source_dir):
+            for file in files:
+                file_path = os.path.join(root, file)
+                arcname = os.path.relpath(file_path, source_dir)
+                zip_file.write(file_path, arcname)
+    zip_buffer.seek(0)
+    return zip_buffer
+
+def display_pdf_preview(pdf_path):
+    with open(pdf_path, "rb") as f:
+        base64_pdf = base64.b64encode(f.read()).decode('utf-8')
+    
+    pdf_display = f'<iframe src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600" type="application/pdf"></iframe>'
+    st.markdown(pdf_display, unsafe_allow_html=True)
+
+def get_pdf_page_as_image(pdf_path, page_num=0):
+    try:
+        import fitz
+        pdf_document = fitz.open(pdf_path)
+        page = pdf_document[page_num]
+        mat = fitz.Matrix(2, 2)
+        pix = page.get_pixmap(matrix=mat)
+        img_data = pix.tobytes("png")
+        img = Image.open(BytesIO(img_data))
+        pdf_document.close()
+        return img
+    except ImportError:
+        st.warning("PDF preview requires PyMuPDF. Install it with: pip install PyMuPDF")
+        return None
+    except Exception as e:
+        st.error(f"Error loading PDF preview: {e}")
+        return None
+
+def main():
+    initialize_session_state()
+    
+    st.title("🎓 Examination Pass Generator")
+    st.markdown("Generate professional examination entry passes for Excel Schools")
+    
+    with st.sidebar:
+        st.header("📁 Upload Required Files")
+        
+        st.subheader("CSV Files")
+        student_file = st.file_uploader(
+            "Student List CSV",
+            type=['csv'],
+            help="Upload student list with Display Name, School, Grade, Section, enrollment codes"
+        )
+        
+        exam_file = st.file_uploader(
+            "Exam List CSV",
+            type=['csv'],
+            help="Upload exam schedule with Grade, Subject, Exam Date, Day, Timing, School, Exam Name"
+        )
+        
+        school_file = st.file_uploader(
+            "School List CSV",
+            type=['csv'],
+            help="Upload school details with name, address, contact information"
+        )
+        
+        st.info("📌 School logos and principal signatures are automatically included in the generated passes.")
+    
+    col1, col2, col3 = st.columns([2, 2, 1])
+    
+    with col1:
+        if st.button("🚀 Generate Passes", type="primary", use_container_width=True):
+            if not all([student_file, exam_file, school_file]):
+                st.error("Please upload all required CSV files!")
+                return
+            
+            with st.spinner("Generating examination passes..."):
+                try:
+                    temp_dir = tempfile.mkdtemp()
+                    st.session_state.temp_dir = temp_dir
+                    
+                    input_dir = os.path.join(temp_dir, "input")
+                    output_dir = os.path.join(temp_dir, "output")
+                    images_dir = os.path.join(temp_dir, "images")
+                    logos_dir = os.path.join(images_dir, "logos")
+                    signatures_dir = os.path.join(images_dir, "signatures")
+                    
+                    os.makedirs(input_dir, exist_ok=True)
+                    os.makedirs(output_dir, exist_ok=True)
+                    os.makedirs(logos_dir, exist_ok=True)
+                    os.makedirs(signatures_dir, exist_ok=True)
+                    
+                    # Save with specific names that match config expectations
+                    save_uploaded_file(student_file, input_dir, "student_list.csv")
+                    save_uploaded_file(exam_file, input_dir, "exam_list.csv") 
+                    save_uploaded_file(school_file, input_dir, "school_list.csv")
+                    
+                    # Copy existing logos from the project directory
+                    project_logos_dir = Path(__file__).parent / "images" / "logos"
+                    if project_logos_dir.exists():
+                        for logo_file in project_logos_dir.glob("*.png"):
+                            shutil.copy2(logo_file, logos_dir)
+                    else:
+                        st.warning("Default logos not found. Passes will be generated without logos.")
+                    
+                    # Copy existing signatures from the project directory
+                    project_signatures_dir = Path(__file__).parent / "images" / "signatures"
+                    if project_signatures_dir.exists():
+                        for sig_file in project_signatures_dir.glob("*.png"):
+                            shutil.copy2(sig_file, signatures_dir)
+                    else:
+                        st.warning("Default signatures not found. Passes will be generated without signatures.")
+                    
+                    original_cwd = os.getcwd()
+                    os.chdir(temp_dir)
+                    
+                    config.INPUT_DIR = Path(input_dir)
+                    config.OUTPUT_DIR = Path(output_dir)
+                    config.IMAGES_DIR = Path(images_dir)
+                    config.STUDENT_LIST_FILE = Path(input_dir) / "student_list.csv"
+                    config.EXAM_LIST_FILE = Path(input_dir) / "exam_list.csv"
+                    config.SCHOOL_LIST_FILE = Path(input_dir) / "school_list.csv"
+                    config.LOGOS_DIR = Path(logos_dir)
+                    config.SIGNATURES_DIR = Path(signatures_dir)
+                    
+                    generator = PassGenerator()
+                    generated_files = generator.generate_all_passes()
+                    
+                    # Calculate statistics
+                    total_students = 0
+                    total_all_students = 0
+                    grade_breakdown = {}
+                    
+                    for school, files in generated_files.items():
+                        school_students = generator.get_school_student_count(school)
+                        total_school_students = generator.get_total_school_students(school)
+                        total_students += school_students
+                        total_all_students += total_school_students
+                        
+                        grade_stats = generator.get_grade_section_stats(school)
+                        if grade_stats:
+                            grade_breakdown[school] = grade_stats
+                    
+                    stats = {
+                        'total_students': total_all_students,
+                        'passes_generated': total_students,
+                        'students_without_passes': total_all_students - total_students,
+                        'grade_breakdown': grade_breakdown
+                    }
+                    st.session_state.generation_stats = stats
+                    
+                    os.chdir(original_cwd)
+                    
+                    pdf_files = []
+                    for root, dirs, files in os.walk(output_dir):
+                        for file in files:
+                            if file.endswith('.pdf'):
+                                pdf_files.append(os.path.join(root, file))
+                    
+                    st.session_state.generated_pdfs = pdf_files
+                    
+                    if pdf_files:
+                        st.success(f"✅ Successfully generated {len(pdf_files)} PDF files!")
+                    else:
+                        st.warning("⚠️ No PDF files were generated. This may occur if there are no matching exams for the students in the uploaded files.")
+                    
+                except Exception as e:
+                    st.error(f"Error generating passes: {str(e)}")
+                    logger.error(f"Generation error: {e}", exc_info=True)
+    
+    with col2:
+        if st.session_state.generated_pdfs and st.session_state.temp_dir:
+            zip_buffer = create_zip_file(os.path.join(st.session_state.temp_dir, "output"))
+            st.download_button(
+                label="📥 Download All Generated Passes (ZIP)",
+                data=zip_buffer,
+                file_name=f"examination_passes_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
+                mime="application/zip",
+                use_container_width=True
+            )
+    
+    with col3:
+        if st.button("🗑️ Clear All", use_container_width=True):
+            if st.session_state.temp_dir and os.path.exists(st.session_state.temp_dir):
+                shutil.rmtree(st.session_state.temp_dir)
+            st.session_state.generated_pdfs = []
+            st.session_state.temp_dir = None
+            st.session_state.generation_stats = None
+            st.rerun()
+    
+    if st.session_state.generation_stats:
+        st.header("📊 Generation Statistics")
+        
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Total Students", st.session_state.generation_stats['total_students'])
+        with col2:
+            st.metric("Passes Generated", st.session_state.generation_stats['passes_generated'])
+        with col3:
+            st.metric("Students Without Passes", st.session_state.generation_stats['students_without_passes'])
+        with col4:
+            st.metric("PDF Files Created", len(st.session_state.generated_pdfs))
+        
+        if st.session_state.generation_stats.get('grade_breakdown'):
+            st.subheader("Grade-wise Breakdown")
+            breakdown_data = []
+            for school, grades in st.session_state.generation_stats['grade_breakdown'].items():
+                for grade, stats in grades.items():
+                    total_by_section = stats.get('total_by_section', {})
+                    with_passes = stats.get('with_passes', {})
+                    for section, total_count in total_by_section.items():
+                        passes_count = with_passes.get(section, 0)
+                        breakdown_data.append({
+                            'School': school,
+                            'Grade': grade,
+                            'Section': section,
+                            'Total Students': total_count,
+                            'With Passes': passes_count,
+                            'Without Passes': total_count - passes_count
+                        })
+            
+            if breakdown_data:
+                grade_df = pd.DataFrame(breakdown_data)
+                st.dataframe(grade_df, use_container_width=True)
+    
+    if st.session_state.generated_pdfs:
+        st.header("📄 Generated PDF Files")
+        
+        tab1, tab2 = st.tabs(["File List", "PDF Preview"])
+        
+        with tab1:
+            for pdf_path in st.session_state.generated_pdfs:
+                rel_path = os.path.relpath(pdf_path, st.session_state.temp_dir)
+                col1, col2 = st.columns([4, 1])
+                with col1:
+                    st.text(rel_path)
+                with col2:
+                    with open(pdf_path, "rb") as f:
+                        st.download_button(
+                            label="Download",
+                            data=f.read(),
+                            file_name=os.path.basename(pdf_path),
+                            mime="application/pdf",
+                            key=f"download_{rel_path}"
+                        )
+        
+        with tab2:
+            if st.session_state.generated_pdfs:
+                selected_pdf = st.selectbox(
+                    "Select a PDF to preview",
+                    options=st.session_state.generated_pdfs,
+                    format_func=lambda x: os.path.relpath(x, st.session_state.temp_dir)
+                )
+                
+                if selected_pdf:
+                    st.subheader(f"Preview: {os.path.basename(selected_pdf)}")
+                    
+                    try:
+                        pdf_image = get_pdf_page_as_image(selected_pdf, 0)
+                        if pdf_image:
+                            st.image(pdf_image, caption="First page preview", use_column_width=True)
+                        else:
+                            with open(selected_pdf, "rb") as f:
+                                base64_pdf = base64.b64encode(f.read()).decode('utf-8')
+                            pdf_display = f'<embed src="data:application/pdf;base64,{base64_pdf}" width="100%" height="600" type="application/pdf">'
+                            st.markdown(pdf_display, unsafe_allow_html=True)
+                    except Exception as e:
+                        st.error(f"Could not display PDF preview: {e}")
+                        with open(selected_pdf, "rb") as f:
+                            st.download_button(
+                                label="Download PDF to view",
+                                data=f.read(),
+                                file_name=os.path.basename(selected_pdf),
+                                mime="application/pdf"
+                            )
+    
+    with st.expander("ℹ️ Instructions"):
+        st.markdown("""
+        ### How to use this application:
+        
+        1. **Upload Required CSV Files:**
+           - Student List: Contains student information (name, school, grade, section)
+           - Exam List: Contains exam schedules and details
+           - School List: Contains school information
+        
+        2. **Automatic Assets:**
+           - School logos and principal signatures are automatically included
+           - No image uploads required
+        
+        3. **Generate Passes:**
+           - Click the "Generate Passes" button
+           - Wait for the generation process to complete
+        
+        4. **Download Results:**
+           - Download individual PDFs or
+           - Download all files as a ZIP archive
+        
+        5. **Preview:**
+           - Use the PDF Preview tab to view generated passes
+        """)
+
+if __name__ == "__main__":
+    main()

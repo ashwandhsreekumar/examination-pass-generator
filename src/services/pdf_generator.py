@@ -22,6 +22,7 @@ from ..config import (
     NORMAL_FONT_SIZE, SMALL_FONT_SIZE, DATE_OF_ISSUE, ACADEMIC_YEAR,
     LIGHT_GRAY, BORDER_COLOR
 )
+from ..utils.file_manager import get_display_grade_for_school
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,7 @@ class PDFGenerator:
         """Generate PDF with all passes for a grade."""
         try:
             self.canvas = canvas.Canvas(str(output_path), pagesize=landscape(A4))
+            self.display_grade = get_display_grade_for_school(grade, school.name)
             
             # Process students in pairs (2 per page)
             for i in range(0, len(students), 2):
@@ -177,7 +179,7 @@ class PDFGenerator:
         # Draw text content in each cell
         cells = [
             ("Student Name", student.name),
-            ("Grade & Section", student.grade_section),
+            ("Grade & Section", self._get_display_grade_section(student)),
             ("Enrollment Code", student.enrollment_code or '')
         ]
         
@@ -409,3 +411,10 @@ class PDFGenerator:
             if value:
                 self.canvas.setFont(FONT_FAMILY, 8)
                 self.canvas.drawString(cell_x, y_offset - 32, value)
+    
+    def _get_display_grade_section(self, student: Student) -> str:
+        """Get the display grade and section for the student."""
+        display_grade = getattr(self, 'display_grade', student.grade)
+        if student.section and student.section.strip() and student.section.strip().lower() not in ['nan', 'none', '', '-']:
+            return f"{display_grade} {student.section}"
+        return display_grade
