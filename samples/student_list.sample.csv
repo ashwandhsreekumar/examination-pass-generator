@@ -1,0 +1,6 @@
+Display Name,School,Grade,Section,CF.Admission No,CF.Gender,CF.Father's Name,CF.Mother's Name,CF.Father Mobile No,CF.Mother Mobile No,CF.Reference code
+John Doe,Excel Central School,Grade 01,A,ECS2025001,Male,Robert Doe,Jane Doe,9876543210,9876543211,REF001
+Sarah Smith,Excel Central School,Grade 01,B,ECS2025002,Female,Michael Smith,Emily Smith,9876543212,9876543213,REF002
+Alex Johnson,Excel Global School,Grade 02,A,EGS2025001,Male,David Johnson,Lisa Johnson,9876543214,9876543215,REF003
+Emma Williams,Excel Global School,Grade 02,A,EGS2025002,Female,James Williams,Mary Williams,9876543216,9876543217,REF004
+Ryan Brown,Excel Pathway School,Grade 03,B,EPS2025001,Male,Thomas Brown,Patricia Brown,9876543218,9876543219,REF005
