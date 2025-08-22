@@ -100,22 +100,8 @@ def display_pdf_preview(pdf_path):
     st.markdown(pdf_display, unsafe_allow_html=True)
 
 def get_pdf_page_as_image(pdf_path, page_num=0):
-    try:
-        import fitz
-        pdf_document = fitz.open(pdf_path)
-        page = pdf_document[page_num]
-        mat = fitz.Matrix(2, 2)
-        pix = page.get_pixmap(matrix=mat)
-        img_data = pix.tobytes("png")
-        img = Image.open(BytesIO(img_data))
-        pdf_document.close()
-        return img
-    except ImportError:
-        # PyMuPDF not installed, but we have a fallback method
-        return None
-    except Exception as e:
-        st.error(f"Error loading PDF preview: {e}")
-        return None
+    # Return None to use the default embed viewer
+    return None
 
 def main():
     initialize_session_state()
