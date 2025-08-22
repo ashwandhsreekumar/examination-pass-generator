@@ -108,75 +108,48 @@ def main():
         st.subheader("CSV Files")
         
         # Student List Upload
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            st.markdown("**Student List CSV**")
-        with col2:
-            sample_student_path = Path(__file__).parent / "samples" / "student_list.sample.csv"
-            if sample_student_path.exists():
-                with open(sample_student_path, 'rb') as f:
-                    st.download_button(
-                        label="📥 Sample",
-                        data=f.read(),
-                        file_name="student_list.csv",
-                        mime="text/csv",
-                        key="sample_student",
-                        help="Download sample student list"
-                    )
         student_file = st.file_uploader(
-            "Upload student file",
+            "Student List CSV",
             type=['csv'],
-            help="Upload student list with Display Name, School, Grade, Section, enrollment codes",
-            label_visibility="collapsed"
+            help="Upload student list with Display Name, School, Grade, Section, enrollment codes"
         )
+        sample_student_path = Path(__file__).parent / "samples" / "student_list.sample.csv"
+        if sample_student_path.exists():
+            with open(sample_student_path, 'rb') as f:
+                data = f.read()
+                b64 = base64.b64encode(data).decode()
+                href = f'<a href="data:text/csv;base64,{b64}" download="student_list.csv" style="text-decoration: none; color: #0068C9;">📥 Download sample file</a>'
+                st.markdown(href, unsafe_allow_html=True)
         st.divider()
         
         # Exam List Upload
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            st.markdown("**Exam List CSV**")
-        with col2:
-            sample_exam_path = Path(__file__).parent / "samples" / "exam_list.sample.csv"
-            if sample_exam_path.exists():
-                with open(sample_exam_path, 'rb') as f:
-                    st.download_button(
-                        label="📥 Sample",
-                        data=f.read(),
-                        file_name="exam_list.csv",
-                        mime="text/csv",
-                        key="sample_exam",
-                        help="Download sample exam list"
-                    )
         exam_file = st.file_uploader(
-            "Upload exam file",
+            "Exam List CSV",
             type=['csv'],
-            help="Upload exam schedule with Grade, Subject, Exam Date, Day, Timing, School, Exam Name",
-            label_visibility="collapsed"
+            help="Upload exam schedule with Grade, Subject, Exam Date, Day, Timing, School, Exam Name"
         )
+        sample_exam_path = Path(__file__).parent / "samples" / "exam_list.sample.csv"
+        if sample_exam_path.exists():
+            with open(sample_exam_path, 'rb') as f:
+                data = f.read()
+                b64 = base64.b64encode(data).decode()
+                href = f'<a href="data:text/csv;base64,{b64}" download="exam_list.csv" style="text-decoration: none; color: #0068C9;">📥 Download sample file</a>'
+                st.markdown(href, unsafe_allow_html=True)
         st.divider()
         
         # School List Upload
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            st.markdown("**School List CSV**")
-        with col2:
-            sample_school_path = Path(__file__).parent / "samples" / "school_list.sample.csv"
-            if sample_school_path.exists():
-                with open(sample_school_path, 'rb') as f:
-                    st.download_button(
-                        label="📥 Sample",
-                        data=f.read(),
-                        file_name="school_list.csv",
-                        mime="text/csv",
-                        key="sample_school",
-                        help="Download sample school list"
-                    )
         school_file = st.file_uploader(
-            "Upload school file",
+            "School List CSV",
             type=['csv'],
-            help="Upload school details with name, address, contact information",
-            label_visibility="collapsed"
+            help="Upload school details with name, address, contact information"
         )
+        sample_school_path = Path(__file__).parent / "samples" / "school_list.sample.csv"
+        if sample_school_path.exists():
+            with open(sample_school_path, 'rb') as f:
+                data = f.read()
+                b64 = base64.b64encode(data).decode()
+                href = f'<a href="data:text/csv;base64,{b64}" download="school_list.csv" style="text-decoration: none; color: #0068C9;">📥 Download sample file</a>'
+                st.markdown(href, unsafe_allow_html=True)
         
         st.info("📌 School logos and principal signatures are automatically included in the generated passes.")
     
