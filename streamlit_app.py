@@ -79,7 +79,7 @@ def get_pdf_page_as_image(pdf_path, page_num=0):
         pdf_document.close()
         return img
     except ImportError:
-        st.warning("PDF preview requires PyMuPDF. Install it with: pip install PyMuPDF")
+        # PyMuPDF not installed, but we have a fallback method
         return None
     except Exception as e:
         st.error(f"Error loading PDF preview: {e}")
