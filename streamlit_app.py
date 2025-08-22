@@ -33,6 +33,8 @@ def initialize_session_state():
         st.session_state.temp_dir = None
     if 'generation_stats' not in st.session_state:
         st.session_state.generation_stats = None
+    if 'instructions_expanded' not in st.session_state:
+        st.session_state.instructions_expanded = True
 
 def create_download_link(file_path, link_text):
     """Create a download link for a sample file."""
@@ -157,6 +159,9 @@ def main():
     
     with col1:
         if st.button("🚀 Generate Passes", type="primary", use_container_width=True):
+            # Collapse instructions when generating
+            st.session_state.instructions_expanded = False
+            
             if not all([student_file, exam_file, school_file]):
                 st.error("Please upload all required CSV files!")
                 return
@@ -374,7 +379,7 @@ def main():
                                 mime="application/pdf"
                             )
     
-    with st.expander("ℹ️ Instructions"):
+    with st.expander("ℹ️ Instructions", expanded=st.session_state.instructions_expanded):
         st.markdown("""
         ### How to use this application:
         
