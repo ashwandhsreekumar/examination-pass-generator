@@ -113,13 +113,13 @@ def main():
             type=['csv'],
             help="Upload student list with Display Name, School, Grade, Section, enrollment codes"
         )
-        sample_student_path = Path(__file__).parent / "input" / "student_list.csv"
+        sample_student_path = Path(__file__).parent / "samples" / "student_list.sample.csv"
         if sample_student_path.exists():
             with open(sample_student_path, 'rb') as f:
                 st.download_button(
                     label="📥 Download Sample Student List",
                     data=f.read(),
-                    file_name="sample_student_list.csv",
+                    file_name="student_list.csv",
                     mime="text/csv",
                     key="sample_student",
                     use_container_width=True
@@ -132,13 +132,13 @@ def main():
             type=['csv'],
             help="Upload exam schedule with Grade, Subject, Exam Date, Day, Timing, School, Exam Name"
         )
-        sample_exam_path = Path(__file__).parent / "input" / "exam_list.csv"
+        sample_exam_path = Path(__file__).parent / "samples" / "exam_list.sample.csv"
         if sample_exam_path.exists():
             with open(sample_exam_path, 'rb') as f:
                 st.download_button(
                     label="📥 Download Sample Exam List",
                     data=f.read(),
-                    file_name="sample_exam_list.csv",
+                    file_name="exam_list.csv",
                     mime="text/csv",
                     key="sample_exam",
                     use_container_width=True
@@ -151,13 +151,13 @@ def main():
             type=['csv'],
             help="Upload school details with name, address, contact information"
         )
-        sample_school_path = Path(__file__).parent / "input" / "school_list.csv"
+        sample_school_path = Path(__file__).parent / "samples" / "school_list.sample.csv"
         if sample_school_path.exists():
             with open(sample_school_path, 'rb') as f:
                 st.download_button(
                     label="📥 Download Sample School List",
                     data=f.read(),
-                    file_name="sample_school_list.csv",
+                    file_name="school_list.csv",
                     mime="text/csv",
                     key="sample_school",
                     use_container_width=True
