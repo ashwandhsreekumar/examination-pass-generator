@@ -120,11 +120,32 @@ def get_pdf_page_as_image(pdf_path, page_num=0):
 def main():
     initialize_session_state()
     
-    # Custom CSS to reduce sidebar top padding
+    # Custom CSS to reduce sidebar top padding and use full viewport height
     st.markdown("""
         <style>
         [data-testid="stSidebarUserContent"] {
             padding-top: 24px !important;
+        }
+        
+        /* Make the main container use full viewport height */
+        .main > div {
+            max-width: none !important;
+            max-height: none !important;
+            height: 100vh !important;
+        }
+        
+        /* Ensure the app view uses full height */
+        [data-testid="stAppViewContainer"] {
+            max-height: none !important;
+            height: 100vh !important;
+        }
+        
+        /* Make the main block container use full height */
+        .block-container {
+            max-width: none !important;
+            padding-top: 2rem !important;
+            padding-bottom: 2rem !important;
+            height: 100% !important;
         }
         </style>
     """, unsafe_allow_html=True)
