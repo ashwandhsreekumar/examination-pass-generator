@@ -405,21 +405,6 @@ def main():
                 # Display filtered results
                 st.markdown(f"**Showing {len(filtered_df)} of {len(grade_df)} records**")
                 
-                # Add summary metrics for filtered data
-                if len(filtered_df) > 0:
-                    metric_col1, metric_col2, metric_col3, metric_col4 = st.columns(4)
-                    with metric_col1:
-                        st.metric("Filtered Total", filtered_df['Total Students'].sum())
-                    with metric_col2:
-                        st.metric("Filtered Passes", filtered_df['With Passes'].sum())
-                    with metric_col3:
-                        st.metric("Filtered Without", filtered_df['Without Passes'].sum())
-                    with metric_col4:
-                        total = filtered_df['Total Students'].sum()
-                        passes = filtered_df['With Passes'].sum()
-                        rate = (passes/total*100) if total > 0 else 0
-                        st.metric("Pass Rate", f"{rate:.1f}%")
-                
                 # Display the filtered dataframe
                 st.dataframe(
                     filtered_df,
